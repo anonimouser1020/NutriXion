@@ -1,0 +1,434 @@
+{
+  "salchipapa": {
+    "Caloric Value": 680,
+    "Fat": 42.0,
+    "Saturated Fats": 14.5,
+    "Sugars": 4.0,
+    "Sodium": 980,
+    "Protein": 18.0
+  },
+  "choripapa": {
+    "Caloric Value": 740,
+    "Fat": 46.0,
+    "Saturated Fats": 16.5,
+    "Sugars": 3.5,
+    "Sodium": 1050,
+    "Protein": 22.0
+  },
+  "empanada": {
+    "Caloric Value": 320,
+    "Fat": 18.5,
+    "Saturated Fats": 7.5,
+    "Sugars": 1.5,
+    "Sodium": 420,
+    "Protein": 8.5
+  },
+  "arepa": {
+    "Caloric Value": 220,
+    "Fat": 4.5,
+    "Saturated Fats": 1.8,
+    "Sugars": 1.0,
+    "Sodium": 280,
+    "Protein": 6.0
+  },
+  "arepa de huevo": {
+    "Caloric Value": 390,
+    "Fat": 22.0,
+    "Saturated Fats": 7.8,
+    "Sugars": 1.2,
+    "Sodium": 440,
+    "Protein": 11.0
+  },
+  "arepa rellena": {
+    "Caloric Value": 460,
+    "Fat": 21.0,
+    "Saturated Fats": 9.0,
+    "Sugars": 2.0,
+    "Sodium": 620,
+    "Protein": 24.0
+  },
+  "patacon": {
+    "Caloric Value": 280,
+    "Fat": 14.0,
+    "Saturated Fats": 5.5,
+    "Sugars": 3.0,
+    "Sodium": 190,
+    "Protein": 2.0
+  },
+  "aborrajado": {
+    "Caloric Value": 360,
+    "Fat": 18.0,
+    "Saturated Fats": 8.2,
+    "Sugars": 16.0,
+    "Sodium": 310,
+    "Protein": 8.5
+  },
+  "buñuelo": {
+    "Caloric Value": 260,
+    "Fat": 15.0,
+    "Saturated Fats": 6.5,
+    "Sugars": 4.0,
+    "Sodium": 350,
+    "Protein": 5.5
+  },
+  "pandebono": {
+    "Caloric Value": 240,
+    "Fat": 9.5,
+    "Saturated Fats": 5.2,
+    "Sugars": 3.0,
+    "Sodium": 340,
+    "Protein": 7.0
+  },
+  "deditos de queso": {
+    "Caloric Value": 330,
+    "Fat": 19.0,
+    "Saturated Fats": 8.8,
+    "Sugars": 2.0,
+    "Sodium": 460,
+    "Protein": 9.5
+  },
+  "papa rellena": {
+    "Caloric Value": 380,
+    "Fat": 19.5,
+    "Saturated Fats": 7.2,
+    "Sugars": 2.0,
+    "Sodium": 490,
+    "Protein": 12.0
+  },
+  "perro caliente colombiano": {
+    "Caloric Value": 620,
+    "Fat": 36.0,
+    "Saturated Fats": 13.5,
+    "Sugars": 9.0,
+    "Sodium": 1120,
+    "Protein": 16.0
+  },
+  "mazorcada": {
+    "Caloric Value": 710,
+    "Fat": 41.0,
+    "Saturated Fats": 15.0,
+    "Sugars": 8.0,
+    "Sodium": 950,
+    "Protein": 28.0
+  },
+  "bandeja paisa": {
+    "Caloric Value": 1150,
+    "Fat": 58.0,
+    "Saturated Fats": 22.0,
+    "Sugars": 12.0,
+    "Sodium": 1350,
+    "Protein": 54.0
+  },
+  "sancocho": {
+    "Caloric Value": 490,
+    "Fat": 14.0,
+    "Saturated Fats": 4.8,
+    "Sugars": 4.0,
+    "Sodium": 580,
+    "Protein": 32.0
+  },
+  "mute santandereano": {
+    "Caloric Value": 520,
+    "Fat": 16.5,
+    "Saturated Fats": 6.0,
+    "Sugars": 3.5,
+    "Sodium": 610,
+    "Protein": 34.0
+  },
+  "ajiaco": {
+    "Caloric Value": 510,
+    "Fat": 18.0,
+    "Saturated Fats": 7.5,
+    "Sugars": 3.0,
+    "Sodium": 590,
+    "Protein": 30.0
+  },
+  "lechona": {
+    "Caloric Value": 640,
+    "Fat": 38.0,
+    "Saturated Fats": 14.0,
+    "Sugars": 1.5,
+    "Sodium": 780,
+    "Protein": 31.0
+  },
+  "tamal": {
+    "Caloric Value": 450,
+    "Fat": 22.0,
+    "Saturated Fats": 8.5,
+    "Sugars": 2.0,
+    "Sodium": 620,
+    "Protein": 19.0
+  },
+  "tamal santandereano": {
+    "Caloric Value": 510,
+    "Fat": 24.0,
+    "Saturated Fats": 8.8,
+    "Sugars": 2.5,
+    "Sodium": 650,
+    "Protein": 22.0
+  },
+  "chicharron": {
+    "Caloric Value": 540,
+    "Fat": 44.0,
+    "Saturated Fats": 16.0,
+    "Sugars": 0.0,
+    "Sodium": 690,
+    "Protein": 32.0
+  },
+  "carne oreada": {
+    "Caloric Value": 430,
+    "Fat": 22.0,
+    "Saturated Fats": 8.5,
+    "Sugars": 0.5,
+    "Sodium": 720,
+    "Protein": 42.0
+  },
+  "arroz con pollo": {
+    "Caloric Value": 460,
+    "Fat": 14.0,
+    "Saturated Fats": 3.8,
+    "Sugars": 3.5,
+    "Sodium": 610,
+    "Protein": 26.0
+  },
+  "picada colombiana": {
+    "Caloric Value": 820,
+    "Fat": 52.0,
+    "Saturated Fats": 19.5,
+    "Sugars": 2.5,
+    "Sodium": 1180,
+    "Protein": 38.0
+  },
+  "mojarra frita": {
+    "Caloric Value": 520,
+    "Fat": 24.0,
+    "Saturated Fats": 6.5,
+    "Sugars": 2.0,
+    "Sodium": 480,
+    "Protein": 40.0
+  },
+  "calentado": {
+    "Caloric Value": 550,
+    "Fat": 18.0,
+    "Saturated Fats": 6.2,
+    "Sugars": 3.0,
+    "Sodium": 590,
+    "Protein": 24.0
+  },
+  "cazuela de frijoles": {
+    "Caloric Value": 580,
+    "Fat": 21.0,
+    "Saturated Fats": 7.5,
+    "Sugars": 6.0,
+    "Sodium": 640,
+    "Protein": 25.0
+  },
+  "ceviche": {
+    "Caloric Value": 190,
+    "Fat": 4.0,
+    "Saturated Fats": 0.8,
+    "Sugars": 3.0,
+    "Sodium": 340,
+    "Protein": 26.0
+  },
+  "lomo saltado": {
+    "Caloric Value": 560,
+    "Fat": 26.0,
+    "Saturated Fats": 8.0,
+    "Sugars": 4.0,
+    "Sodium": 740,
+    "Protein": 32.0
+  },
+  "asado": {
+    "Caloric Value": 510,
+    "Fat": 32.0,
+    "Saturated Fats": 12.5,
+    "Sugars": 0.5,
+    "Sodium": 580,
+    "Protein": 44.0
+  },
+  "choripan": {
+    "Caloric Value": 490,
+    "Fat": 28.0,
+    "Saturated Fats": 10.5,
+    "Sugars": 2.0,
+    "Sodium": 820,
+    "Protein": 20.0
+  },
+  "milanesa": {
+    "Caloric Value": 440,
+    "Fat": 22.0,
+    "Saturated Fats": 6.5,
+    "Sugars": 1.5,
+    "Sodium": 540,
+    "Protein": 31.0
+  },
+  "alfajor": {
+    "Caloric Value": 280,
+    "Fat": 12.0,
+    "Saturated Fats": 6.8,
+    "Sugars": 24.0,
+    "Sodium": 110,
+    "Protein": 3.5
+  },
+  "cachapa": {
+    "Caloric Value": 410,
+    "Fat": 16.0,
+    "Saturated Fats": 8.5,
+    "Sugars": 9.0,
+    "Sodium": 420,
+    "Protein": 14.0
+  },
+  "pabellon criollo": {
+    "Caloric Value": 630,
+    "Fat": 22.0,
+    "Saturated Fats": 7.0,
+    "Sugars": 11.0,
+    "Sodium": 680,
+    "Protein": 34.0
+  },
+  "feijoada": {
+    "Caloric Value": 590,
+    "Fat": 26.0,
+    "Saturated Fats": 9.5,
+    "Sugars": 2.5,
+    "Sodium": 790,
+    "Protein": 33.0
+  },
+  "coxinha": {
+    "Caloric Value": 310,
+    "Fat": 16.5,
+    "Saturated Fats": 5.5,
+    "Sugars": 1.5,
+    "Sodium": 430,
+    "Protein": 11.0
+  },
+  "anticuchos": {
+    "Caloric Value": 340,
+    "Fat": 15.0,
+    "Saturated Fats": 5.0,
+    "Sugars": 1.5,
+    "Sodium": 510,
+    "Protein": 35.0
+  },
+  "pollo asado": {
+    "Caloric Value": 390,
+    "Fat": 19.0,
+    "Saturated Fats": 5.5,
+    "Sugars": 0.5,
+    "Sodium": 560,
+    "Protein": 38.0
+  },
+  "samosa": {
+    "Caloric Value": 308,
+    "Fat": 17.0,
+    "Saturated Fats": 6.8,
+    "Sugars": 2.0,
+    "Sodium": 410,
+    "Protein": 7.0
+  },
+  "tacos": {
+    "Caloric Value": 380,
+    "Fat": 20.0,
+    "Saturated Fats": 8.2,
+    "Sugars": 2.5,
+    "Sodium": 580,
+    "Protein": 16.0
+  },
+  "nachos": {
+    "Caloric Value": 540,
+    "Fat": 32.0,
+    "Saturated Fats": 13.0,
+    "Sugars": 3.0,
+    "Sodium": 820,
+    "Protein": 12.0
+  },
+  "churros": {
+    "Caloric Value": 390,
+    "Fat": 21.0,
+    "Saturated Fats": 6.0,
+    "Sugars": 24.0,
+    "Sodium": 310,
+    "Protein": 4.5
+  },
+  "quesadilla": {
+    "Caloric Value": 470,
+    "Fat": 26.0,
+    "Saturated Fats": 12.5,
+    "Sugars": 2.0,
+    "Sodium": 670,
+    "Protein": 20.0
+  },
+  "guacamole": {
+    "Caloric Value": 240,
+    "Fat": 22.0,
+    "Saturated Fats": 3.2,
+    "Sugars": 1.5,
+    "Sodium": 290,
+    "Protein": 3.0
+  },
+  "arroz con mariscos": {
+    "Caloric Value": 410,
+    "Fat": 12.0,
+    "Saturated Fats": 2.5,
+    "Sugars": 2.0,
+    "Sodium": 540,
+    "Protein": 24.0
+  },
+  "ramen": {
+    "Caloric Value": 480,
+    "Fat": 19.0,
+    "Saturated Fats": 8.5,
+    "Sugars": 3.0,
+    "Sodium": 1150,
+    "Protein": 18.0
+  },
+  "sushi": {
+    "Caloric Value": 290,
+    "Fat": 5.5,
+    "Saturated Fats": 1.2,
+    "Sugars": 6.0,
+    "Sodium": 420,
+    "Protein": 14.0
+  },
+  "waffles": {
+    "Caloric Value": 260,
+    "Fat": 7.0,
+    "Saturated Fats": 2.9,
+    "Sugars": 0.0,
+    "Sodium": 0.6,
+    "Protein": 4.1
+  },
+  "pepitoria santandereano": {
+    "Caloric Value": 642.3,
+    "Fat": 35.9,
+    "Saturated Fats": 13.3,
+    "Sugars": 5.6,
+    "Sodium": 844.8,
+    "Protein": 26.9
+  },
+  "hormigas culonas": {
+    "Caloric Value": 437.9,
+    "Fat": 23.3,
+    "Saturated Fats": 9.3,
+    "Sugars": 7.6,
+    "Sodium": 533.7,
+    "Protein": 25.8
+  },
+  "oblea florideña": {
+    "Caloric Value": 446.2,
+    "Fat": 20.8,
+    "Saturated Fats": 8.6,
+    "Sugars": 3.6,
+    "Sodium": 543.3,
+    "Protein": 18.5
+  },
+  "arepa santandereana": {
+    "Caloric Value": 249.9,
+    "Fat": 6.6,
+    "Saturated Fats": 2.7,
+    "Sugars": 1.3,
+    "Sodium": 317.6,
+    "Protein": 8.0
+  }
+}
