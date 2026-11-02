@@ -30,16 +30,20 @@ jobs:
           channel: "stable"
           cache: true
 
-      - name: 5. Instalar Flet
+      - name: 5. Aceptar licencias de Android SDK
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: 6. Instalar Flet
         run: |
           python -m pip install --upgrade pip
           pip install flet==0.24.1
 
-      - name: 6. Compilar archivo .APK de NutriXion
+      - name: 7. Compilar archivo .APK de NutriXion
         run: |
           flet build apk --project "NutriXion" --description "Salud alimenticia" -v
 
-      - name: 7. Subir el APK listo para descargar
+      - name: 8. Subir el APK listo para descargar
         uses: actions/upload-artifact@v4
         with:
           name: NutriXion-Android-APK

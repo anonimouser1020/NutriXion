@@ -1,10 +1,15 @@
-import pandas as pd
+import csv
 import glob
 import os
+import re
 import json
-from deep_translator import MyMemoryTranslator
 
-# Compatibilidad automática: Usa IA pesada en PC y modo ligero en Android (.apk)
+try:
+    from deep_translator import MyMemoryTranslator
+except ImportError:
+    MyMemoryTranslator = None
+
+# En PC carga PyTorch y CLIP; en Android (.apk) funciona en modo ligero sin fallar
 try:
     import torch
     from PIL import Image
@@ -20,7 +25,7 @@ class AnalizadorNutricional:
         self.archivo_extra_json = os.path.join(self.carpeta_csv, "memoria_ia_extra.json")
         self.archivo_huellas_visuales = os.path.join(self.carpeta_csv, "huellas_visuales_ia.json")
         
-        # 1. Cargamos los 5 CSV de Kaggle en modo SOLO LECTURA (jamás se modifican)
+        # 1. Cargamos los 5 CSV de Kaggle en modo SOLO LECTURA usando el módulo nativo csv
         self.df = self.cargar_multiples_csv()
         self.ultimas_predicciones_ia = []
         self.huellas_visuales = {}
@@ -191,7 +196,6 @@ class AnalizadorNutricional:
             pass
 
     def cargar_huellas_visuales(self):
-        """Carga los vectores visuales de las fotos enseñadas por el usuario."""
         if os.path.exists(self.archivo_huellas_visuales):
             try:
                 with open(self.archivo_huellas_visuales, "r", encoding="utf-8") as f:
@@ -207,6 +211,8 @@ class AnalizadorNutricional:
             pass
 
     def cargar_modelo_local(self):
+        if not IA_PESADA_DISPONIBLE:
+            return
         carpeta_entrenada = os.path.join(self.carpeta_csv, "modelo_nutrixion_entrenado")
         nombre_modelo = carpeta_entrenada if os.path.exists(os.path.join(carpeta_entrenada, "config.json")) else "openai/clip-vit-base-patch32"
         print("🧠 Cargando motor de visión IA CLIP...")
@@ -220,14 +226,12 @@ class AnalizadorNutricional:
             self.clip_model = None
 
     def _extraer_vector_imagen(self, imagen_pil):
-        """Extrae el vector característico normalizado (512D) de una imagen para comparar similitud visual."""
         inputs_img = self.clip_processor(images=imagen_pil, return_tensors="pt")
         pixel_values = inputs_img["pixel_values"].to(self.dispositivo)
 
         with torch.no_grad():
             salida = self.clip_model.get_image_features(pixel_values=pixel_values)
 
-            # Extraemos el tensor si transformers devuelve BaseModelOutputWithPooling
             if isinstance(salida, torch.Tensor):
                 emb = salida
             elif hasattr(salida, "image_embeds") and salida.image_embeds is not None:
@@ -239,18 +243,13 @@ class AnalizadorNutricional:
             else:
                 emb = salida[0]
 
-            # Normalizamos el vector de forma segura con PyTorch
             emb = torch.nn.functional.normalize(emb, p=2, dim=-1)
 
         return emb[0].detach().cpu()
 
     def entrenar_comida_desde_imagenes(self, nombre_comida, lista_rutas_imagenes, nutrientes_dict, descripcion_visual=""):
-        """
-        Aprende una comida directamente desde las fotos que el usuario seleccione (sin carpetas manuales).
-        Guarda la huella visual promedio para reconocer fotos similares con máxima exactitud.
-        """
-        if not self.clip_model or not self.clip_processor:
-            return {"error": "El motor CLIP no está cargado."}
+        if not IA_PESADA_DISPONIBLE or not self.clip_model or not self.clip_processor:
+            return {"error": "El motor CLIP solo está disponible en PC."}
 
         nombre_limpio = nombre_comida.lower().strip()
         vectores = []
@@ -283,22 +282,15 @@ class AnalizadorNutricional:
             self.descripciones_visuales_clip[nombre_limpio] = f"a photo of a plate of food called {nombre_limpio}, traditional meal"
 
         self.guardar_en_memoria_extra(nombre_limpio, nutrientes_dict)
-        print(f"✅ IA entrenada con '{nombre_limpio}' usando {fotos_procesadas} foto(s).")
         return {"exito": True, "nombre": nombre_limpio, "fotos": fotos_procesadas}
-    
+
     def deducir_nutrientes_desde_imagenes_ia(self, nombre_comida, lista_rutas_imagenes):
-        """
-        Analiza visualmente las fotos con CLIP + la base de Kaggle/Regional para calcular
-        automáticamente calorías, grasas, proteínas, azúcares y sodio sin pedirlos al usuario.
-        """
         nombre_limpio = nombre_comida.lower().strip()
 
-        # 1. Si el nombre ya existe exactamente en el catálogo base, partimos de ahí
         if nombre_limpio in self.catalogo_latino:
             base = self.catalogo_latino[nombre_limpio].copy()
             return base, self._generar_tabla_porciones(base)
 
-        # 2. Analizamos cada foto con CLIP para ver a qué alimentos conocidos se parece visualmente
         acumulado = {
             "Caloric Value": 0.0,
             "Fat": 0.0,
@@ -309,58 +301,54 @@ class AnalizadorNutricional:
         }
         peso_total = 0.0
 
-        nombres_platos = list(self.descripciones_visuales_clip.keys())
-        textos_descriptivos = list(self.descripciones_visuales_clip.values())
+        if IA_PESADA_DISPONIBLE and self.clip_model and self.clip_processor:
+            nombres_platos = list(self.descripciones_visuales_clip.keys())
+            textos_descriptivos = list(self.descripciones_visuales_clip.values())
 
-        for ruta in lista_rutas_imagenes:
-            if not os.path.exists(ruta):
-                continue
-            try:
-                imagen = Image.open(ruta).convert("RGB")
-                inputs = self.clip_processor(
-                    text=textos_descriptivos,
-                    images=imagen,
-                    return_tensors="pt",
-                    padding=True,
-                    truncation=True
-                ).to(self.dispositivo)
+            for ruta in lista_rutas_imagenes:
+                if not os.path.exists(ruta):
+                    continue
+                try:
+                    imagen = Image.open(ruta).convert("RGB")
+                    inputs = self.clip_processor(
+                        text=textos_descriptivos,
+                        images=imagen,
+                        return_tensors="pt",
+                        padding=True,
+                        truncation=True
+                    ).to(self.dispositivo)
 
-                with torch.no_grad():
-                    outputs = self.clip_model(**inputs)
-                    probs = outputs.logits_per_image.softmax(dim=1)[0]
+                    with torch.no_grad():
+                        outputs = self.clip_model(**inputs)
+                        probs = outputs.logits_per_image.softmax(dim=1)[0]
 
-                # Tomamos los 5 alimentos visualmente más parecidos en composición
-                top_probs, top_indices = torch.topk(probs, k=min(5, len(nombres_platos)))
+                    top_probs, top_indices = torch.topk(probs, k=min(5, len(nombres_platos)))
 
-                for prob, idx in zip(top_probs, top_indices):
-                    etiqueta = nombres_platos[idx.item()]
-                    score = float(prob.item())
+                    for prob, idx in zip(top_probs, top_indices):
+                        etiqueta = nombres_platos[idx.item()]
+                        score = float(prob.item())
 
-                    if etiqueta in self.catalogo_latino:
-                        ref = self.catalogo_latino[etiqueta]
-                        for k in acumulado:
-                            acumulado[k] += float(ref[k]) * score
-                        peso_total += score
-                    elif not self.df.empty:
-                        coincidencia = self.df[self.df['food'].str.contains(etiqueta, na=False)]
-                        if not coincidencia.empty:
-                            fila = coincidencia.iloc[0]
+                        if etiqueta in self.catalogo_latino:
+                            ref = self.catalogo_latino[etiqueta]
                             for k in acumulado:
-                                acumulado[k] += float(fila.get(k, 0)) * score
+                                acumulado[k] += float(ref[k]) * score
                             peso_total += score
-            except Exception:
-                pass
+                        else:
+                            fila = self.buscar_en_csv(etiqueta, exacto=False)
+                            if fila:
+                                for k in acumulado:
+                                    acumulado[k] += float(fila.get(k, 0)) * score
+                                peso_total += score
+                except Exception:
+                    pass
 
-        # 3. Calculamos los nutrientes base ponderados por la visión de la IA
         if peso_total > 0:
             nutrientes_ia = {k: round(v / peso_total, 1) for k, v in acumulado.items()}
             nutrientes_ia["Caloric Value"] = round(nutrientes_ia["Caloric Value"], 1)
             nutrientes_ia["Sodium"] = round(nutrientes_ia["Sodium"], 1)
         else:
-            # Respaldo por si no pudo abrir la imagen
             nutrientes_ia, _ = self.estimar_nutrientes_con_ia(nombre_limpio)
 
-        # 4. Ajuste inteligente por palabras clave del nombre (ej. si dice 'frito', 'asado', 'sopa', 'tamal')
         if any(p in nombre_limpio for p in ["tamal", "envuelto", "hallaca", "pastel"]):
             nutrientes_ia["Caloric Value"] = round((nutrientes_ia["Caloric Value"] + 490) / 2, 1)
             nutrientes_ia["Fat"] = round((nutrientes_ia["Fat"] + 23.0) / 2, 1)
@@ -372,7 +360,6 @@ class AnalizadorNutricional:
         return nutrientes_ia, self._generar_tabla_porciones(nutrientes_ia)
 
     def _generar_tabla_porciones(self, nutrientes_base):
-        """Devuelve cómo quedan las calorías y nutrientes en porción Pequeña, Mediana y Grande."""
         tabla = {}
         for nombre_porcion, factor in self.factores_porcion.items():
             tabla[nombre_porcion] = {
@@ -386,48 +373,64 @@ class AnalizadorNutricional:
         return tabla
 
     def cargar_multiples_csv(self):
+        """Lee los 5 archivos FOOD-DATA-GROUP*.csv con la librería estándar de Python (sin pandas)."""
         patron_busqueda = os.path.join(self.carpeta_csv, "FOOD-DATA-GROUP*.csv")
         archivos_csv = sorted(glob.glob(patron_busqueda))
-        if not archivos_csv:
-            return pd.DataFrame()
+        filas_totales = []
+        columnas_numericas = {'Caloric Value', 'Fat', 'Saturated Fats', 'Sugars', 'Sodium', 'Protein'}
 
-        lista_dataframes = []
         for archivo in archivos_csv:
             try:
-                lista_dataframes.append(pd.read_csv(archivo))
+                with open(archivo, mode="r", encoding="utf-8", errors="ignore") as f:
+                    lector = csv.DictReader(f)
+                    for fila in lector:
+                        item = {}
+                        for k, v in fila.items():
+                            if not k or "Unnamed" in k:
+                                continue
+                            clave = k.strip()
+                            val_str = str(v).strip() if v is not None else ""
+                            if clave == "food":
+                                item["food"] = val_str.lower()
+                            elif clave in columnas_numericas:
+                                try:
+                                    item[clave] = float(val_str.replace(",", "")) if val_str else 0.0
+                                except ValueError:
+                                    item[clave] = 0.0
+                        if item.get("food"):
+                            filas_totales.append(item)
             except Exception:
                 pass
 
-        if not lista_dataframes:
-            return pd.DataFrame()
+        return filas_totales
 
-        df_unido = pd.concat(lista_dataframes, ignore_index=True)
-        df_unido.columns = df_unido.columns.str.strip()
-        columnas_basura = [col for col in df_unido.columns if 'Unnamed' in col]
-        df_unido = df_unido.drop(columns=columnas_basura, errors='ignore')
+    def buscar_en_csv(self, termino, exacto=False):
+        termino = termino.lower().strip()
+        if not termino or not self.df:
+            return None
 
-        if 'food' in df_unido.columns:
-            df_unido['food'] = df_unido['food'].astype(str).str.lower().str.strip()
+        if exacto:
+            patron = re.compile(rf"\b{re.escape(termino)}\b")
+            for fila in self.df:
+                if patron.search(fila["food"]):
+                    return fila
 
-        columnas_numericas = ['Caloric Value', 'Fat', 'Saturated Fats', 'Sugars', 'Sodium', 'Protein']
-        for col in columnas_numericas:
-            if col in df_unido.columns:
-                df_unido[col] = pd.to_numeric(df_unido[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
-
-        return df_unido
+        for fila in self.df:
+            if termino in fila["food"]:
+                return fila
+        return None
 
     def identificar_imagen_con_ia(self, ruta_imagen):
-        """
-        Compara la foto primero contra las huellas visuales entrenadas por el usuario (fotos similares)
-        y luego contra el catálogo descriptivo de CLIP, además de estimar el tamaño de porción.
-        """
-        if not self.clip_model or not self.clip_processor:
-            return {"error": "⚠️ El modelo de visión CLIP no se cargó correctamente."}
+        if not IA_PESADA_DISPONIBLE or not self.clip_model or not self.clip_processor:
+            nombre_archivo = os.path.splitext(os.path.basename(ruta_imagen))[0].replace("_", " ").replace("-", " ").lower()
+            for plato in self.catalogo_latino:
+                if plato in nombre_archivo:
+                    return {"alimento_en": plato, "confianza": 95.0, "porcion_detectada": "Mediana"}
+            return {"error": "📱 En Android escribe el nombre del plato abajo y presiona 'Analizar Nutrientes'."}
 
         try:
             imagen = Image.open(ruta_imagen).convert("RGB")
 
-            # 1. Clasificación de tamaño de porción (Pequeña, Mediana, Grande)
             nombres_tamanos = list(self.prompts_tamano_clip.keys())
             textos_tamanos = list(self.prompts_tamano_clip.values())
             inputs_tamano = self.clip_processor(
@@ -441,7 +444,6 @@ class AnalizadorNutricional:
             idx_tamano = int(torch.argmax(probs_tamano).item())
             porcion_detectada = nombres_tamanos[idx_tamano]
 
-            # 2. Comparación por Similitud Visual Directa (si el usuario ya le enseñó fotos a la IA)
             mejor_plato_visual = None
             mayor_similitud_visual = 0.0
 
@@ -454,7 +456,6 @@ class AnalizadorNutricional:
                         mayor_similitud_visual = similitud
                         mejor_plato_visual = plato_aprendido
 
-            # 3. Clasificación Zero-Shot por descripciones de texto
             nombres_platos = list(self.descripciones_visuales_clip.keys())
             textos_descriptivos = list(self.descripciones_visuales_clip.values())
 
@@ -474,16 +475,13 @@ class AnalizadorNutricional:
                 score = float(prob.item())
                 self.ultimas_predicciones_ia.append({"label": etiqueta, "score": score})
 
-            # Si la foto tiene alta similitud visual (>= 0.80) con una comida enseñada, prioriza esa comida
             if mejor_plato_visual and mayor_similitud_visual >= 0.80:
                 mejor_plato = mejor_plato_visual
                 confianza = round(min(mayor_similitud_visual * 100, 99.5), 1)
                 self.ultimas_predicciones_ia.insert(0, {"label": mejor_plato, "score": mayor_similitud_visual})
-                print(f"🎯 Reconocido por Memoria Visual Entrenada: '{mejor_plato}' ({confianza}%) | Porción: {porcion_detectada}")
             else:
                 mejor_plato = self.ultimas_predicciones_ia[0]["label"]
                 confianza = round(self.ultimas_predicciones_ia[0]["score"] * 100, 1)
-                print(f"🤖 Comida detectada: '{mejor_plato}' ({confianza}%) | Porción: {porcion_detectada}")
 
             return {
                 "alimento_en": mejor_plato,
@@ -499,7 +497,7 @@ class AnalizadorNutricional:
 
         for clave, valores in self.catalogo_latino.items():
             if clave == nombre_limpio or clave in nombre_limpio or nombre_limpio in clave:
-                return valores.copy(), "🇨🇴 Base Nutricional / Memoria Entrenada"
+                return valores.copy(), "🇨🇴 Base Nutricional"
 
         acumulado = {"Caloric Value": 0.0, "Fat": 0.0, "Saturated Fats": 0.0, "Sugars": 0.0, "Sodium": 0.0, "Protein": 0.0}
         peso_total = 0.0
@@ -515,9 +513,8 @@ class AnalizadorNutricional:
                         acumulado[k] += ref[k] * score
                     peso_total += score
                 else:
-                    coincidencia = self.df[self.df['food'].str.contains(etiqueta, na=False)]
-                    if not coincidencia.empty:
-                        fila = coincidencia.iloc[0]
+                    fila = self.buscar_en_csv(etiqueta, exacto=False)
+                    if fila:
                         for k in acumulado:
                             acumulado[k] += float(fila.get(k, 0)) * score
                         peso_total += score
@@ -526,7 +523,7 @@ class AnalizadorNutricional:
             estimacion = {k: round(v / peso_total, 1) for k, v in acumulado.items()}
             estimacion["Caloric Value"] = round(estimacion["Caloric Value"])
             self.guardar_en_memoria_extra(nombre_limpio, estimacion)
-            return estimacion, "🧠 Calculado por IA Visual CLIP"
+            return estimacion, "🧠 Calculado por IA"
 
         if any(p in nombre_limpio for p in ["frit", "salchipapa", "choripapa", "empanada", "chicharron", "papas", "buñuelo", "patacon"]):
             estimacion = {"Caloric Value": 420, "Fat": 24.0, "Saturated Fats": 9.5, "Sugars": 2.5, "Sodium": 580, "Protein": 12.0}
@@ -538,7 +535,7 @@ class AnalizadorNutricional:
             estimacion = {"Caloric Value": 310, "Fat": 12.0, "Saturated Fats": 4.2, "Sugars": 3.0, "Sodium": 380, "Protein": 15.0}
 
         self.guardar_en_memoria_extra(nombre_limpio, estimacion)
-        return estimacion, "🧠 Estimado por IA Nutricional"
+        return estimacion, "🧠 Estimado por IA"
 
     def calcular_perfil_usuario(self, peso_kg, altura_m):
         imc = peso_kg / (altura_m ** 2)
@@ -608,9 +605,6 @@ class AnalizadorNutricional:
         }
 
     def evaluar_alimento(self, nombre_comida_input, peso_kg, altura_m, ya_en_ingles=False, tamano_porcion="Mediana"):
-        if self.df.empty:
-            return {"error": "La base de datos está vacía."}
-
         nombre_comida_input = nombre_comida_input.lower().strip()
         factor = self.factores_porcion.get(tamano_porcion, 1.0)
 
@@ -625,10 +619,10 @@ class AnalizadorNutricional:
 
         if plato_latino_detectado:
             datos = self.catalogo_latino[plato_latino_detectado]
-            fuente_datos = "🧠 Memoria IA Entrenada / Regional" if plato_latino_detectado in self.huellas_visuales else "🇨🇴 Base Nutricional Colombiana / Suramericana"
+            fuente_datos = ""
             nombre_mostrar = plato_latino_detectado.capitalize()
         else:
-            if ya_en_ingles:
+            if ya_en_ingles or MyMemoryTranslator is None:
                 nombre_comida_en = nombre_comida_input
             else:
                 try:
@@ -637,20 +631,20 @@ class AnalizadorNutricional:
                 except Exception:
                     nombre_comida_en = nombre_comida_input
 
-            patron_exacto = rf"\b{nombre_comida_en}\b"
-            coincidencias = self.df[self.df['food'].str.contains(patron_exacto, regex=True, na=False)]
-            if coincidencias.empty:
-                coincidencias = self.df[self.df['food'].str.contains(nombre_comida_en, na=False)]
+            fila_encontrada = self.buscar_en_csv(nombre_comida_en, exacto=True)
+            if not fila_encontrada:
+                fila_encontrada = self.buscar_en_csv(nombre_comida_en, exacto=False)
 
-            if not coincidencias.empty:
-                datos = coincidencias.iloc[0]
-                fuente_datos = "📚 Base de datos Kaggle"
+            if fila_encontrada:
+                datos = fila_encontrada
+                fuente_datos = ""
                 nombre_mostrar = str(datos['food']).capitalize()
-                try:
-                    traductor_es = MyMemoryTranslator(source='en-US', target='es-ES')
-                    nombre_mostrar = traductor_es.translate(nombre_mostrar).capitalize()
-                except Exception:
-                    pass
+                if MyMemoryTranslator is not None:
+                    try:
+                        traductor_es = MyMemoryTranslator(source='en-US', target='es-ES')
+                        nombre_mostrar = traductor_es.translate(nombre_mostrar).capitalize()
+                    except Exception:
+                        pass
             else:
                 datos, fuente_datos = self.estimar_nutrientes_con_ia(nombre_comida_input)
                 nombre_mostrar = nombre_comida_input.capitalize()
