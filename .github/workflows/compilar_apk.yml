@@ -3,7 +3,7 @@ name: Compilar NutriXion APK
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch: # Te permite ejecutarlo con un botón manual en GitHub
+  workflow_dispatch:
 
 jobs:
   build-android-apk:
@@ -37,7 +37,7 @@ jobs:
 
       - name: 6. Compilar archivo .APK de NutriXion
         run: |
-          flet build apk --project "NutriXion" --description "Salud alimenticia" --yes -v
+          flet build apk --project "NutriXion" --description "Salud alimenticia" -v
 
       - name: 7. Subir el APK listo para descargar
         uses: actions/upload-artifact@v4
