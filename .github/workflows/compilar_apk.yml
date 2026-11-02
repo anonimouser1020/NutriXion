@@ -19,7 +19,7 @@ jobs:
           python-version: "3.11"
 
       - name: 3. Configurar Java 17 para Android
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: "temurin"
           java-version: "17"
@@ -31,9 +31,10 @@ jobs:
           channel: "stable"
           cache: false
 
-      - name: 5. Aceptar licencias de Android SDK
+      - name: 5. Instalar Android SDK 35 y aceptar licencias
         run: |
-          yes | flutter doctor --android-licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "platforms;android-35" "build-tools;34.0.0" "build-tools;35.0.0"
 
       - name: 6. Instalar Flet y preparar compilador
         run: |
@@ -43,6 +44,8 @@ jobs:
           cat << 'EOF' > /tmp/compilar_ci.py
           import os
           import sys
+          import shutil
+          import runpy
           import subprocess
           import yaml
 
@@ -53,17 +56,17 @@ jobs:
               if not cwd or not os.path.exists(ruta_pub):
                   return
 
-              print(f"Aplicando configuracion Android compatible en: {cwd}", flush=True)
+              print(f"--> Ajustando compatibilidad Android en: {cwd}", flush=True)
 
-              # 1. Fijar versiones compatibles de plugins en pubspec.yaml usando PyYAML
+              # 1. Fijar versiones exactas de plugins compatibles con Flutter 3.24.3
               try:
                   with open(ruta_pub, "r", encoding="utf-8") as f:
                       data = yaml.safe_load(f)
                   if isinstance(data, dict):
                       overrides = data.get("dependency_overrides") or {}
-                      overrides["package_info_plus"] = "8.0.2"
-                      overrides["wakelock_plus"] = "1.2.8"
-                      overrides["file_picker"] = "8.0.6"
+                      overrides["package_info_plus"] = "8.0.0"
+                      overrides["wakelock_plus"] = "1.2.5"
+                      overrides["file_picker"] = "8.0.5"
                       overrides["web"] = "1.0.0"
                       data["dependency_overrides"] = overrides
                       with open(ruta_pub, "w", encoding="utf-8") as f:
@@ -71,7 +74,7 @@ jobs:
               except Exception as e:
                   print(f"Aviso en pubspec.yaml: {e}", flush=True)
 
-              # 2. Reemplazar linea completa de compileSdk en android/app/build.gradle
+              # 2. Configurar compileSdk = 35 y targetSdk = 34 sin errores de sintaxis
               ruta_app_gradle = os.path.join(cwd, "android", "app", "build.gradle")
               if os.path.exists(ruta_app_gradle):
                   lineas = []
@@ -87,20 +90,7 @@ jobs:
                   with open(ruta_app_gradle, "w", encoding="utf-8") as f:
                       f.writelines(lineas)
 
-              # 3. Actualizar version de Kotlin a 1.9.24 en android/settings.gradle
-              ruta_settings = os.path.join(cwd, "android", "settings.gradle")
-              if os.path.exists(ruta_settings):
-                  lineas = []
-                  with open(ruta_settings, "r", encoding="utf-8") as f:
-                      for linea in f:
-                          if "org.jetbrains.kotlin.android" in linea and "version" in linea:
-                              lineas.append('    id "org.jetbrains.kotlin.android" version "1.9.24" apply false\n')
-                          else:
-                              lineas.append(linea)
-                  with open(ruta_settings, "w", encoding="utf-8") as f:
-                      f.writelines(lineas)
-
-              # 4. Fijar librerias AndroidX compatibles con SDK 34/35 en android/build.gradle
+              # 3. Fijar librerias AndroidX compatibles con AGP de Flet 0.24.1
               ruta_root_gradle = os.path.join(cwd, "android", "build.gradle")
               if os.path.exists(ruta_root_gradle):
                   with open(ruta_root_gradle, "r", encoding="utf-8") as f:
@@ -136,14 +126,14 @@ jobs:
 
           subprocess.run = hooked_run
 
-          from flet_cli.cli import main
+          ruta_flet = shutil.which("flet")
           sys.argv = [
-              "flet", "build", "apk",
+              ruta_flet, "build", "apk",
               "--project", "NutriXion",
               "--description", "Salud alimenticia",
               "--no-rich-output", "-vv"
           ]
-          main()
+          runpy.run_path(ruta_flet, run_name="__main__")
           EOF
 
       - name: 7. Compilar archivo .APK de NutriXion
