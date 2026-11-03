@@ -169,7 +169,6 @@ def main(page: ft.Page):
         )
     )
 
-    # Margen superior amplio (top=38) + SafeArea para respetar la barra de notificaciones de Android
     contenedor_principal_app = ft.Container(
         padding=ft.padding.only(left=12, top=38, right=12, bottom=24),
         visible=False
@@ -1131,8 +1130,9 @@ def main(page: ft.Page):
         if not cap.isOpened():
             detener_camara()
             selector_camara_movil.pick_files(
-                dialog_title="Toma una foto con Cámara",
-                file_type=ft.FilePickerFileType.ANY,
+                dialog_title="Tomar foto",
+                file_type=ft.FilePickerFileType.CUSTOM,
+                allowed_extensions=["camara"],
                 allow_multiple=False
             )
             return
@@ -1153,13 +1153,12 @@ def main(page: ft.Page):
             time.sleep(0.03)
 
     def accion_camara(e):
-        # En Android (donde cv2 es None), FilePickerFileType.ANY abre el selector del sistema que incluye la opción Cámara
+        # En Android abre directamente la cámara del teléfono (tomar foto -> tocar Listo/✔️)
         if cv2 is None:
-            texto_estado_foto.value = "📸 Elige 'Cámara' en el menú de tu teléfono para tomar la foto"
-            page.update()
             selector_camara_movil.pick_files(
-                dialog_title="Elige Cámara para tomar la foto",
-                file_type=ft.FilePickerFileType.ANY,
+                dialog_title="Tomar foto",
+                file_type=ft.FilePickerFileType.CUSTOM,
+                allowed_extensions=["camara"],
                 allow_multiple=False
             )
             return

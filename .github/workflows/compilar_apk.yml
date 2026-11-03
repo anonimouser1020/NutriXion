@@ -36,14 +36,16 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "platforms;android-35" "build-tools;34.0.0" "build-tools;35.0.0"
 
-      - name: 6. Instalar Flet y preparar icono oficial de NutriXion
+      - name: 6. Instalar Flet y preparar compilador con Camara Directa
         run: |
           python -m pip install --upgrade pip
           pip install flet==0.24.1 pyyaml pillow
 
           cat << 'EOF' > /tmp/compilar_ci.py
           import os
+          import re
           import sys
+          import glob
           import shutil
           import runpy
           import subprocess
@@ -68,15 +70,12 @@ jobs:
               print(f"--> Procesando '{ruta_logo_encontrado}' como icono oficial de Android...", flush=True)
               img = Image.open(ruta_logo_encontrado).convert("RGBA")
               ancho, alto = img.size
-
-              # Recortamos el cuadrado central para que el escudo circular no se deforme
               lado = min(ancho, alto)
               izq = (ancho - lado) // 2
               arr = (alto - lado) // 2
               img_cuadrada = img.crop((izq, arr, izq + lado, arr + lado))
               img_icono = img_cuadrada.resize((1024, 1024), Image.Resampling.LANCZOS)
 
-              # Guardamos en todas las rutas que Flet y Android utilizan
               for destino in [
                   "assets/icon.png",
                   "assets/icon_android.png",
@@ -86,11 +85,55 @@ jobs:
                   "logo.png"
               ]:
                   img_icono.save(destino, format="PNG")
-              print("--> Iconos generados correctamente en ./assets/", flush=True)
-          else:
-              print("ADVERTENCIA: No se encontro logo.png en el repositorio.", flush=True)
 
           orig_run = subprocess.run
+
+          def inyectar_camara_directa_java():
+              archivos_delegate = glob.glob("/home/runner/.pub-cache/**/FilePickerDelegate.java", recursive=True)
+              for ruta_java in archivos_delegate:
+                  with open(ruta_java, "r", encoding="utf-8") as f:
+                      codigo = f.read()
+
+                  if "ACTION_IMAGE_CAPTURE" in codigo:
+                      continue
+
+                  bloque_lanzar_camara = """private void startFileExplorer() {
+                      if (this.allowedExtensions != null && this.allowedExtensions.length > 0 && "camara".equals(this.allowedExtensions[0])) {
+                          Intent camIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                          this.activity.startActivityForResult(camIntent, REQUEST_CODE);
+                          return;
+                      }"""
+
+                  bloque_recibir_foto = """if (requestCode == REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+                      if (this.allowedExtensions != null && this.allowedExtensions.length > 0 && "camara".equals(this.allowedExtensions[0]) && data != null && data.getExtras() != null && data.getExtras().get("data") instanceof android.graphics.Bitmap) {
+                          try {
+                              android.graphics.Bitmap bmp = (android.graphics.Bitmap) data.getExtras().get("data");
+                              java.io.File outFile = new java.io.File(this.activity.getCacheDir(), "captura_" + System.currentTimeMillis() + ".jpg");
+                              java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile);
+                              bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, fos);
+                              fos.flush();
+                              fos.close();
+                              final ArrayList<FileInfo> camFiles = new ArrayList<>();
+                              final FileInfo camInfo = new FileInfo.Builder()
+                                  .withPath(outFile.getAbsolutePath())
+                                  .withName(outFile.getName())
+                                  .withUri(android.net.Uri.fromFile(outFile))
+                                  .withSize(outFile.length())
+                                  .build();
+                              camFiles.add(camInfo);
+                              finishWithSuccess(camFiles);
+                              return true;
+                          } catch (Exception e) {
+                              e.printStackTrace();
+                          }
+                      }"""
+
+                  codigo = codigo.replace("private void startFileExplorer() {", bloque_lanzar_camara, 1)
+                  codigo = codigo.replace("if (requestCode == REQUEST_CODE && resultCode == Activity.RESULT_OK) {", bloque_recibir_foto, 1)
+
+                  with open(ruta_java, "w", encoding="utf-8") as f:
+                      f.write(codigo)
+                  print(f"--> Camara directa Android activada en: {ruta_java}", flush=True)
 
           def aplicar_parche_flutter(cwd):
               ruta_pub = os.path.join(cwd, "pubspec.yaml")
@@ -99,7 +142,6 @@ jobs:
 
               print(f"--> Ajustando compatibilidad Android en: {cwd}", flush=True)
 
-              # Sobrescribir cualquier icono por defecto dentro de la plantilla de Flutter
               if os.path.exists("assets/icon.png"):
                   carpeta_imgs = os.path.join(cwd, "images")
                   if os.path.exists(carpeta_imgs):
@@ -107,7 +149,18 @@ jobs:
                           if arch.endswith(".png"):
                               shutil.copy2("assets/icon.png", os.path.join(carpeta_imgs, arch))
 
-              # Fijar versiones compatibles de plugins en pubspec.yaml
+              # 1. Fijar nombre exacto "NutriXion" y visibilidad de camara en AndroidManifest.xml
+              ruta_manifest = os.path.join(cwd, "android", "app", "src", "main", "AndroidManifest.xml")
+              if os.path.exists(ruta_manifest):
+                  with open(ruta_manifest, "r", encoding="utf-8") as f:
+                      m = f.read()
+                  m = re.sub(r'android:label="[^"]*"', 'android:label="NutriXion"', m)
+                  if "android.media.action.IMAGE_CAPTURE" not in m and "<queries>" in m:
+                      m = m.replace("<queries>", '<queries>\n        <intent>\n            <action android:name="android.media.action.IMAGE_CAPTURE" />\n        </intent>')
+                  with open(ruta_manifest, "w", encoding="utf-8") as f:
+                      f.write(m)
+
+              # 2. Fijar versiones compatibles de plugins en pubspec.yaml
               try:
                   with open(ruta_pub, "r", encoding="utf-8") as f:
                       data = yaml.safe_load(f)
@@ -123,7 +176,7 @@ jobs:
               except Exception as e:
                   print(f"Aviso en pubspec.yaml: {e}", flush=True)
 
-              # Configurar compileSdk = 35 y targetSdk = 34
+              # 3. Configurar compileSdk = 35 y targetSdk = 34
               ruta_app_gradle = os.path.join(cwd, "android", "app", "build.gradle")
               if os.path.exists(ruta_app_gradle):
                   lineas = []
@@ -139,7 +192,7 @@ jobs:
                   with open(ruta_app_gradle, "w", encoding="utf-8") as f:
                       f.writelines(lineas)
 
-              # Fijar librerias AndroidX compatibles
+              # 4. Fijar librerias AndroidX compatibles
               ruta_root_gradle = os.path.join(cwd, "android", "build.gradle")
               if os.path.exists(ruta_root_gradle):
                   with open(ruta_root_gradle, "r", encoding="utf-8") as f:
@@ -164,6 +217,10 @@ jobs:
                       with open(ruta_root_gradle, "w", encoding="utf-8") as f:
                           f.write(contenido + "\n" + bloque_androidx)
 
+              # 5. Asegurar descarga de paquetes y activar camara directa en FilePickerDelegate.java
+              orig_run(["flutter", "pub", "get"], cwd=cwd)
+              inyectar_camara_directa_java()
+
           def hooked_run(*popenargs, **kwargs):
               cmd = popenargs[0] if popenargs else kwargs.get("args", [])
               cwd = kwargs.get("cwd")
@@ -179,6 +236,7 @@ jobs:
           sys.argv = [
               ruta_flet, "build", "apk",
               "--project", "NutriXion",
+              "--product", "NutriXion",
               "--description", "Salud alimenticia",
               "--no-rich-output", "-vv"
           ]
