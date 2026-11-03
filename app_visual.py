@@ -29,7 +29,7 @@ def buscar_archivo_logo():
 
 def main(page: ft.Page):
     page.title = "NutriXion"
-    page.window.width = 465
+    page.window.width = 450
     page.window.height = 920
     page.theme_mode = ft.ThemeMode.DARK
     page.bgcolor = "#0B0F19"
@@ -90,14 +90,14 @@ def main(page: ft.Page):
     # PANTALLA DE CARGA ANIMADA (SPLASH SCREEN)
     # =========================================================================
     contenido_logo_splash = (
-        ft.Image(src=ruta_logo, width=150, height=150, fit=ft.ImageFit.COVER, border_radius=75)
+        ft.Image(src=ruta_logo, width=145, height=145, fit=ft.ImageFit.COVER, border_radius=73)
         if ruta_logo else ft.Text("🍏", size=68)
     )
 
     logo_animado = ft.Container(
-        width=158,
-        height=158,
-        border_radius=79,
+        width=154,
+        height=154,
+        border_radius=77,
         bgcolor=ft.colors.TEAL_900 if ruta_logo else ft.colors.WHITE,
         border=ft.border.all(3, ft.colors.AMBER_400),
         alignment=ft.alignment.center,
@@ -110,7 +110,7 @@ def main(page: ft.Page):
 
     titulo_splash = ft.Text(
         "NutriXion",
-        size=40,
+        size=38,
         weight=ft.FontWeight.BOLD,
         color=ft.colors.WHITE,
         opacity=0.0,
@@ -128,7 +128,7 @@ def main(page: ft.Page):
     )
 
     barra_carga_splash = ft.ProgressBar(
-        width=240,
+        width=230,
         value=0.0,
         color=ft.colors.AMBER_400,
         bgcolor=ft.colors.GREEN_900,
@@ -143,8 +143,9 @@ def main(page: ft.Page):
     )
 
     pantalla_splash = ft.Container(
-        width=465,
-        height=920,
+        width=450,
+        height=900,
+        padding=ft.padding.only(top=40),
         gradient=ft.LinearGradient(
             begin=ft.alignment.top_left,
             end=ft.alignment.bottom_right,
@@ -168,18 +169,28 @@ def main(page: ft.Page):
         )
     )
 
+    # Margen superior amplio (top=38) + SafeArea para respetar la barra de notificaciones de Android
     contenedor_principal_app = ft.Container(
-        padding=ft.padding.symmetric(horizontal=16, vertical=12),
+        padding=ft.padding.only(left=12, top=38, right=12, bottom=24),
         visible=False
     )
 
-    page.add(pantalla_splash, contenedor_principal_app)
+    zona_segura = ft.SafeArea(
+        minimum_padding=ft.padding.only(top=16, bottom=10),
+        content=ft.Column(
+            controls=[pantalla_splash, contenedor_principal_app],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=0
+        )
+    )
+
+    page.add(zona_segura)
 
     motor = AnalizadorNutricional(carpeta_csv=".")
     estado_camara = {"activa": False, "cap": None, "ruta_foto": None}
 
     # =========================================================================
-    # CUADRÍCULA VISUAL DE NUTRIENTES (2x3 TARJETAS MODERNAS)
+    # CUADRÍCULA VISUAL DE NUTRIENTES (2x3 TARJETAS ADAPTABLES A MÓVIL)
     # =========================================================================
     meta_iconos_nutrientes = {
         "Calorías": ("🔥", ft.colors.ORANGE_700),
@@ -205,32 +216,32 @@ def main(page: ft.Page):
             emoji, color_acento = meta_iconos_nutrientes.get(clave, ("•", ft.colors.GREEN_700))
 
             chip = ft.Container(
-                width=172,
+                width=162,
                 height=56,
-                padding=ft.padding.symmetric(horizontal=10, vertical=6),
+                padding=ft.padding.symmetric(horizontal=8, vertical=6),
                 border_radius=10,
                 bgcolor=bg_chip,
                 border=ft.border.all(1, borde_chip),
                 content=ft.Row(
                     controls=[
                         ft.Container(
-                            width=32,
-                            height=32,
+                            width=30,
+                            height=30,
                             border_radius=8,
                             bgcolor=color_acento,
                             alignment=ft.alignment.center,
-                            content=ft.Text(emoji, size=15)
+                            content=ft.Text(emoji, size=14)
                         ),
                         ft.Column(
                             controls=[
                                 ft.Text(clave, size=10, color=color_titulo, no_wrap=True),
-                                ft.Text(str(valor), size=13, weight=ft.FontWeight.BOLD, color=color_valor, no_wrap=True)
+                                ft.Text(str(valor), size=12, weight=ft.FontWeight.BOLD, color=color_valor, no_wrap=True)
                             ],
                             spacing=1,
                             alignment=ft.MainAxisAlignment.CENTER
                         )
                     ],
-                    spacing=8,
+                    spacing=6,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER
                 )
             )
@@ -250,18 +261,18 @@ def main(page: ft.Page):
     # =========================================================================
     icono_header = (
         ft.Container(
-            width=54,
-            height=54,
-            border_radius=27,
+            width=52,
+            height=52,
+            border_radius=26,
             border=ft.border.all(2, ft.colors.AMBER_400),
-            content=ft.Image(src=ruta_logo, width=50, height=50, fit=ft.ImageFit.COVER, border_radius=25)
+            content=ft.Image(src=ruta_logo, width=48, height=48, fit=ft.ImageFit.COVER, border_radius=24)
         )
-        if ruta_logo else ft.Text("🍏", size=36)
+        if ruta_logo else ft.Text("🍏", size=34)
     )
 
     banner_encabezado = ft.Container(
-        width=395,
-        padding=ft.padding.symmetric(horizontal=16, vertical=12),
+        width=365,
+        padding=ft.padding.symmetric(horizontal=14, vertical=10),
         border_radius=16,
         gradient=ft.LinearGradient(
             begin=ft.alignment.top_left,
@@ -274,23 +285,23 @@ def main(page: ft.Page):
                 icono_header,
                 ft.Column(
                     controls=[
-                        ft.Text("NutriXion", size=25, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, no_wrap=True),
-                        ft.Text("Salud alimenticia", size=13, weight=ft.FontWeight.W_600, color=ft.colors.AMBER_300, no_wrap=True)
+                        ft.Text("NutriXion", size=23, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, no_wrap=True),
+                        ft.Text("Salud alimenticia", size=12, weight=ft.FontWeight.W_600, color=ft.colors.AMBER_300, no_wrap=True)
                     ],
                     spacing=2
                 )
             ],
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=14
+            spacing=12
         )
     )
 
     def crear_tab_nav(clave, texto, icono):
-        ic = ft.Icon(icono, size=19, color=ft.colors.WHITE)
+        ic = ft.Icon(icono, size=18, color=ft.colors.WHITE)
         tx = ft.Text(texto, size=11, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, no_wrap=True)
         cont = ft.Container(
-            width=90,
-            height=50,
+            width=83,
+            height=48,
             border_radius=12,
             bgcolor=ft.colors.GREEN_700,
             alignment=ft.alignment.center,
@@ -317,8 +328,8 @@ def main(page: ft.Page):
     }
 
     contenedor_barra_nav = ft.Container(
-        width=395,
-        padding=5,
+        width=365,
+        padding=4,
         border_radius=14,
         bgcolor="#111827",
         border=ft.border.all(1, "#1F2937"),
@@ -330,7 +341,7 @@ def main(page: ft.Page):
                 tab_ajustes["contenedor"]
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-            spacing=4
+            spacing=3
         )
     )
 
@@ -377,7 +388,7 @@ def main(page: ft.Page):
     input_peso = ft.TextField(
         label="Peso (kg)",
         value="52.0",
-        width=172,
+        width=160,
         border_radius=10,
         keyboard_type=ft.KeyboardType.NUMBER,
         prefix_icon=ft.icons.SCALE,
@@ -386,7 +397,7 @@ def main(page: ft.Page):
     input_altura = ft.TextField(
         label="Altura (m)",
         value="1.70",
-        width=172,
+        width=160,
         border_radius=10,
         keyboard_type=ft.KeyboardType.NUMBER,
         prefix_icon=ft.icons.HEIGHT,
@@ -394,8 +405,8 @@ def main(page: ft.Page):
     )
 
     tarjeta_perfil_inputs = ft.Container(
-        width=395,
-        padding=14,
+        width=365,
+        padding=12,
         border_radius=14,
         bgcolor="#111827",
         border=ft.border.all(1, "#1F2937"),
@@ -403,8 +414,8 @@ def main(page: ft.Page):
             controls=[
                 ft.Row(
                     controls=[
-                        ft.Icon(ft.icons.PERSON, color=ft.colors.TEAL_400, size=22),
-                        ft.Text("Tu Perfil Físico y Metas", size=17, weight=ft.FontWeight.BOLD)
+                        ft.Icon(ft.icons.PERSON, color=ft.colors.TEAL_400, size=20),
+                        ft.Text("Tu Perfil Físico y Metas", size=16, weight=ft.FontWeight.BOLD)
                     ],
                     spacing=8
                 ),
@@ -414,21 +425,21 @@ def main(page: ft.Page):
         )
     )
 
-    texto_resumen_imc = ft.Text("", size=14, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, text_align=ft.TextAlign.CENTER)
+    texto_resumen_imc = ft.Text("", size=13, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, text_align=ft.TextAlign.CENTER)
     tarjeta_imc_habitos = ft.Container(
         content=texto_resumen_imc,
-        width=395,
-        padding=14,
+        width=365,
+        padding=12,
         border_radius=14,
         bgcolor=ft.colors.AMBER_800,
         alignment=ft.alignment.center
     )
 
     def crear_pastilla_periodo(nombre):
-        txt = ft.Text(nombre, size=12, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, no_wrap=True)
+        txt = ft.Text(nombre, size=11, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, no_wrap=True)
         cont = ft.Container(
-            width=89,
-            height=38,
+            width=82,
+            height=36,
             border_radius=10,
             bgcolor=ft.colors.BLUE_800,
             alignment=ft.alignment.center,
@@ -445,7 +456,7 @@ def main(page: ft.Page):
     }
 
     barra_periodos = ft.Container(
-        width=395,
+        width=365,
         padding=4,
         border_radius=12,
         bgcolor="#111827",
@@ -453,7 +464,7 @@ def main(page: ft.Page):
         content=ft.Row(
             controls=[b["contenedor"] for b in botones_periodo.values()],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-            spacing=4
+            spacing=3
         )
     )
 
@@ -476,7 +487,7 @@ def main(page: ft.Page):
         mostrar_datos_periodo()
         page.update()
 
-    titulo_periodo_activo = ft.Text("", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400)
+    titulo_periodo_activo = ft.Text("", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400)
     contenedor_grid_habitos = ft.Column(spacing=8)
 
     tarjeta_habitos_nutrientes = ft.Container(
@@ -484,7 +495,7 @@ def main(page: ft.Page):
             controls=[
                 ft.Row(
                     controls=[
-                        ft.Icon(ft.icons.ANALYTICS, color=ft.colors.GREEN_400, size=20),
+                        ft.Icon(ft.icons.ANALYTICS, color=ft.colors.GREEN_400, size=19),
                         titulo_periodo_activo
                     ],
                     spacing=8
@@ -494,26 +505,26 @@ def main(page: ft.Page):
             ],
             spacing=8
         ),
-        padding=16,
+        padding=14,
         bgcolor="#111827",
         border=ft.border.all(1, ft.colors.GREEN_700),
         border_radius=14,
-        width=395
+        width=365
     )
 
     indicador_meta_saludable = ft.Container(
-        width=395,
+        width=365,
         padding=12,
         border_radius=12,
         bgcolor=ft.colors.GREEN_800,
         alignment=ft.alignment.center,
-        content=ft.Text("", size=13, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, text_align=ft.TextAlign.CENTER)
+        content=ft.Text("", size=12, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, text_align=ft.TextAlign.CENTER)
     )
 
     btn_ir_identificar = ft.ElevatedButton(
         text="Ir a Identificar Comida ➡️",
-        width=395,
-        height=46,
+        width=365,
+        height=44,
         on_click=lambda e: cambiar_seccion("identificar"),
         style=ft.ButtonStyle(
             bgcolor=ft.colors.BLUE_700,
@@ -524,8 +535,8 @@ def main(page: ft.Page):
 
     btn_ir_diagnostico = ft.ElevatedButton(
         text="Ver mi Diagnóstico y Plan de Recuperación 🩺",
-        width=395,
-        height=46,
+        width=365,
+        height=44,
         on_click=lambda e: cambiar_seccion("diagnostico"),
         style=ft.ButtonStyle(
             bgcolor=ft.colors.TEAL_700,
@@ -580,7 +591,7 @@ def main(page: ft.Page):
         controls=[
             tarjeta_perfil_inputs,
             tarjeta_imc_habitos,
-            ft.Text("Selecciona el periodo recomendado:", size=13, weight=ft.FontWeight.W_600),
+            ft.Text("Selecciona el periodo recomendado:", size=12, weight=ft.FontWeight.W_600),
             barra_periodos,
             tarjeta_habitos_nutrientes,
             indicador_meta_saludable,
@@ -595,11 +606,11 @@ def main(page: ft.Page):
     # =========================================================================
     # SECCIÓN 2: "IDENTIFICAR"
     # =========================================================================
-    texto_calorias_restantes = ft.Text("", size=13, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, text_align=ft.TextAlign.CENTER)
+    texto_calorias_restantes = ft.Text("", size=12, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, text_align=ft.TextAlign.CENTER)
     tarjeta_calorias_dia = ft.Container(
         content=texto_calorias_restantes,
-        width=395,
-        padding=13,
+        width=365,
+        padding=12,
         border_radius=14,
         bgcolor=ft.colors.TEAL_800,
         alignment=ft.alignment.center
@@ -608,7 +619,7 @@ def main(page: ft.Page):
     lista_visual_comidas = ft.Column(spacing=8)
 
     contenedor_registro_hoy = ft.Container(
-        width=395,
+        width=365,
         padding=12,
         border_radius=14,
         bgcolor="#111827",
@@ -618,7 +629,7 @@ def main(page: ft.Page):
             controls=[
                 ft.Row(
                     controls=[
-                        ft.Text("📋 Comidas consumidas hoy:", size=14, weight=ft.FontWeight.BOLD),
+                        ft.Text("📋 Comidas consumidas hoy:", size=13, weight=ft.FontWeight.BOLD),
                         ft.TextButton("Vaciar día", on_click=lambda e: vaciar_comidas_hoy())
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN
@@ -711,7 +722,7 @@ def main(page: ft.Page):
                 activo = (efecto_actual == nombre_ef)
                 botones_efecto.append(
                     ft.Container(
-                        width=38,
+                        width=36,
                         height=28,
                         border_radius=6,
                         alignment=ft.alignment.center,
@@ -784,43 +795,43 @@ def main(page: ft.Page):
             f"{mensaje_restante}"
         )
 
-    visor_imagen = ft.Image(width=395, height=200, fit=ft.ImageFit.COVER, border_radius=14, visible=False)
+    visor_imagen = ft.Image(width=365, height=195, fit=ft.ImageFit.COVER, border_radius=14, visible=False)
 
     placeholder_visor = ft.Container(
-        width=395,
-        height=200,
+        width=365,
+        height=195,
         bgcolor="#111827",
         border=ft.border.all(1, "#1F2937"),
         border_radius=14,
         alignment=ft.alignment.center,
         content=ft.Column(
             controls=[
-                ft.Icon(ft.icons.IMAGE_SEARCH, size=48, color=ft.colors.TEAL_400),
-                ft.Text("Toma una foto o súbela de la galería", color=ft.colors.GREY_400, size=13)
+                ft.Icon(ft.icons.IMAGE_SEARCH, size=46, color=ft.colors.TEAL_400),
+                ft.Text("Toma una foto con Cámara o súbela de Galería", color=ft.colors.GREY_400, size=12)
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER
         )
     )
 
-    texto_estado_foto = ft.Text("", size=15, color=ft.colors.GREEN_400, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
+    texto_estado_foto = ft.Text("", size=14, color=ft.colors.GREEN_400, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
     texto_porcion_ia = ft.Text("", size=12, color=ft.colors.CYAN_300, weight=ft.FontWeight.W_500, text_align=ft.TextAlign.CENTER)
 
     input_comida = ft.TextField(
         label="Alimento detectado (o escríbelo)",
         hint_text="Ej: salchipapa, empanada, manzana...",
-        width=395,
+        width=365,
         border_radius=10,
         prefix_icon=ft.icons.RESTAURANT
     )
 
-    texto_alimento = ft.Text(size=20, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
-    texto_imc_identificar = ft.Text(size=13, text_align=ft.TextAlign.CENTER, color=ft.colors.GREY_300)
+    texto_alimento = ft.Text(size=19, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
+    texto_imc_identificar = ft.Text(size=12, text_align=ft.TextAlign.CENTER, color=ft.colors.GREY_300)
 
     def crear_pastilla_porcion(clave, etiqueta):
         txt = ft.Text(etiqueta, size=11, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, no_wrap=True)
         cont = ft.Container(
-            width=125,
+            width=116,
             height=36,
             border_radius=10,
             bgcolor=ft.colors.INDIGO_700,
@@ -839,7 +850,7 @@ def main(page: ft.Page):
     fila_botones_porcion = ft.Row(
         controls=[b["contenedor"] for b in botones_porcion.values()],
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        width=395
+        width=365
     )
 
     def aplicar_colores_porcion():
@@ -865,7 +876,7 @@ def main(page: ft.Page):
     def crear_pastilla_horario(momento):
         txt = ft.Text(momento, size=11, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, no_wrap=True)
         cont = ft.Container(
-            width=92,
+            width=85,
             height=34,
             border_radius=10,
             bgcolor=ft.colors.TEAL_700,
@@ -885,7 +896,7 @@ def main(page: ft.Page):
     fila_botones_horario = ft.Row(
         controls=[b["contenedor"] for b in botones_horario.values()],
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        width=395
+        width=365
     )
 
     def seleccionar_horario(momento):
@@ -902,8 +913,8 @@ def main(page: ft.Page):
 
     btn_poner_quitar_actual = ft.ElevatedButton(
         text="➕ Poner en mis comidas de hoy",
-        width=395,
-        height=45
+        width=365,
+        height=44
     )
 
     def accion_boton_poner_quitar(e):
@@ -942,21 +953,21 @@ def main(page: ft.Page):
 
     tarjeta_nutrientes = ft.Container(
         content=contenedor_grid_identificar,
-        padding=14,
+        padding=12,
         bgcolor="#111827",
         border=ft.border.all(1, "#1F2937"),
         border_radius=14,
-        width=395
+        width=365
     )
 
     indicador_salud = ft.Container(
-        width=395,
-        height=56,
+        width=365,
+        height=54,
         border_radius=12,
         bgcolor=ft.colors.GREEN_700,
         alignment=ft.alignment.center,
-        padding=10,
-        content=ft.Text("", size=13, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, text_align=ft.TextAlign.CENTER)
+        padding=8,
+        content=ft.Text("", size=12, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, text_align=ft.TextAlign.CENTER)
     )
 
     columna_resultados_comida = ft.Column(
@@ -1026,7 +1037,6 @@ def main(page: ft.Page):
             meta_diaria = resultado['perfil_usuario']['calorias_diarias_rec']
             restantes_si_come = round(meta_diaria - (calcular_total_consumido_hoy() + calorias_plato))
 
-            # Se muestra únicamente el plato y las calorías que quedarían en el día
             texto_alimento.value = f"🍽️ {nombre_plato} ({porcion_usar})"
             texto_imc_identificar.value = (
                 f"Si comes esta porción {porcion_usar.lower()}, te quedarían hoy: {restantes_si_come:,} kcal"
@@ -1045,6 +1055,18 @@ def main(page: ft.Page):
 
         columna_resultados_comida.visible = True
         page.update()
+
+    def mostrar_imagen_en_visor(ruta):
+        """Carga la imagen en base64 para que se visualice sin fallos tanto en Android como en PC."""
+        try:
+            with open(ruta, "rb") as f:
+                visor_imagen.src_base64 = base64.b64encode(f.read()).decode("utf-8")
+            visor_imagen.src = None
+        except Exception:
+            visor_imagen.src = ruta
+            visor_imagen.src_base64 = None
+        visor_imagen.visible = True
+        placeholder_visor.visible = False
 
     def analizar_foto_local(ruta):
         texto_estado_foto.value = "Analizando imagen y tamaño del plato..."
@@ -1069,18 +1091,17 @@ def main(page: ft.Page):
 
     def archivo_seleccionado(e: ft.FilePickerResultEvent):
         detener_camara()
-        if e.files and len(e.files) > 0:
+        if e.files and len(e.files) > 0 and e.files[0].path:
             ruta = e.files[0].path
             estado_camara["ruta_foto"] = ruta
-            visor_imagen.src = ruta
-            visor_imagen.src_base64 = None
-            visor_imagen.visible = True
-            placeholder_visor.visible = False
+            mostrar_imagen_en_visor(ruta)
             page.update()
             threading.Thread(target=analizar_foto_local, args=(ruta,), daemon=True).start()
 
     selector_archivos = ft.FilePicker(on_result=archivo_seleccionado)
+    selector_camara_movil = ft.FilePicker(on_result=archivo_seleccionado)
     page.overlay.append(selector_archivos)
+    page.overlay.append(selector_camara_movil)
 
     def abrir_galeria(e):
         selector_archivos.pick_files(
@@ -1100,9 +1121,6 @@ def main(page: ft.Page):
 
     def transmitir_video():
         if cv2 is None:
-            texto_estado_foto.value = "⚠️ Usa el botón 'Galería' en dispositivos móviles."
-            detener_camara()
-            page.update()
             return
 
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
@@ -1111,9 +1129,12 @@ def main(page: ft.Page):
         estado_camara["cap"] = cap
 
         if not cap.isOpened():
-            texto_estado_foto.value = "⚠️ No se detectó cámara conectada."
             detener_camara()
-            page.update()
+            selector_camara_movil.pick_files(
+                dialog_title="Toma una foto con Cámara",
+                file_type=ft.FilePickerFileType.ANY,
+                allow_multiple=False
+            )
             return
 
         placeholder_visor.visible = False
@@ -1132,8 +1153,15 @@ def main(page: ft.Page):
             time.sleep(0.03)
 
     def accion_camara(e):
+        # En Android (donde cv2 es None), FilePickerFileType.ANY abre el selector del sistema que incluye la opción Cámara
         if cv2 is None:
-            abrir_galeria(e)
+            texto_estado_foto.value = "📸 Elige 'Cámara' en el menú de tu teléfono para tomar la foto"
+            page.update()
+            selector_camara_movil.pick_files(
+                dialog_title="Elige Cámara para tomar la foto",
+                file_type=ft.FilePickerFileType.ANY,
+                allow_multiple=False
+            )
             return
 
         if not estado_camara["activa"]:
@@ -1157,13 +1185,13 @@ def main(page: ft.Page):
 
     boton_camara = ft.ElevatedButton(
         text="Cámara", icon=ft.icons.CAMERA_ALT, on_click=accion_camara,
-        width=192, height=44, style=ft.ButtonStyle(bgcolor=ft.colors.TEAL_700, color=ft.colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
+        width=176, height=44, style=ft.ButtonStyle(bgcolor=ft.colors.TEAL_700, color=ft.colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
     )
     boton_galeria = ft.ElevatedButton(
         text="Galería", icon=ft.icons.PHOTO_LIBRARY, on_click=abrir_galeria,
-        width=192, height=44, style=ft.ButtonStyle(bgcolor=ft.colors.INDIGO_600, color=ft.colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
+        width=176, height=44, style=ft.ButtonStyle(bgcolor=ft.colors.INDIGO_600, color=ft.colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
     )
-    fila_botones_imagen = ft.Row(controls=[boton_camara, boton_galeria], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, width=395)
+    fila_botones_imagen = ft.Row(controls=[boton_camara, boton_galeria], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, width=365)
 
     def clic_boton_manual(e):
         if input_comida.value.strip():
@@ -1176,8 +1204,8 @@ def main(page: ft.Page):
         text="Analizar Nutrientes",
         icon=ft.icons.ANALYTICS,
         on_click=clic_boton_manual,
-        width=395,
-        height=46,
+        width=365,
+        height=44,
         style=ft.ButtonStyle(
             bgcolor=ft.colors.BLUE_700,
             color=ft.colors.WHITE,
@@ -1207,21 +1235,21 @@ def main(page: ft.Page):
     # =========================================================================
     # SECCIÓN 3: "DIAGNÓSTICO"
     # =========================================================================
-    subtitulo_diagnostico = ft.Text("🩺 Diagnóstico y Plan de Recuperación", size=18, weight=ft.FontWeight.BOLD)
+    subtitulo_diagnostico = ft.Text("🩺 Diagnóstico y Plan de Recuperación", size=17, weight=ft.FontWeight.BOLD)
 
-    titulo_patron = ft.Text("", size=15, weight=ft.FontWeight.BOLD)
-    texto_detalle_patron = ft.Text("", size=13)
-    texto_conexion_causa = ft.Text("", size=13, italic=True)
+    titulo_patron = ft.Text("", size=14, weight=ft.FontWeight.BOLD)
+    texto_detalle_patron = ft.Text("", size=12)
+    texto_conexion_causa = ft.Text("", size=12, italic=True)
 
     tarjeta_patron_alimenticio = ft.Container(
-        width=395,
-        padding=16,
+        width=365,
+        padding=14,
         border_radius=14,
         bgcolor="#111827",
         border=ft.border.all(1, "#1F2937"),
         content=ft.Column(
             controls=[
-                ft.Text("🔍 1. Diagnóstico de tu Patrón Alimenticio Hoy", size=14, weight=ft.FontWeight.BOLD, color=ft.colors.CYAN_400),
+                ft.Text("🔍 1. Diagnóstico de tu Patrón Alimenticio Hoy", size=13, weight=ft.FontWeight.BOLD, color=ft.colors.CYAN_400),
                 titulo_patron,
                 texto_detalle_patron,
                 ft.Divider(height=6),
@@ -1231,14 +1259,14 @@ def main(page: ft.Page):
         )
     )
 
-    titulo_bienestar = ft.Text("⚡ 2. Plan de Recuperación ante Síntomas", size=16, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
-    subtitulo_bienestar = ft.Text("Selecciona qué malestar experimentas para recibir tu plan personalizado:", size=12, color=ft.colors.GREY_400, text_align=ft.TextAlign.CENTER)
+    titulo_bienestar = ft.Text("⚡ 2. Plan de Recuperación ante Síntomas", size=15, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
+    subtitulo_bienestar = ft.Text("Selecciona qué malestar experimentas para recibir tu plan personalizado:", size=11, color=ft.colors.GREY_400, text_align=ft.TextAlign.CENTER)
 
-    titulo_solucion = ft.Text("", size=15, weight=ft.FontWeight.BOLD, color=ft.colors.AMBER_300)
-    texto_causa_sintoma = ft.Text("", size=13)
-    texto_alimentos_sintoma = ft.Text("", size=13)
-    texto_acciones_sintoma = ft.Text("", size=13)
-    texto_feedback_accion = ft.Text("", size=12, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400, text_align=ft.TextAlign.CENTER)
+    titulo_solucion = ft.Text("", size=14, weight=ft.FontWeight.BOLD, color=ft.colors.AMBER_300)
+    texto_causa_sintoma = ft.Text("", size=12)
+    texto_alimentos_sintoma = ft.Text("", size=12)
+    texto_acciones_sintoma = ft.Text("", size=12)
+    texto_feedback_accion = ft.Text("", size=11, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400, text_align=ft.TextAlign.CENTER)
 
     def registrar_origen_identificado(e):
         estado_app["origenes_identificados"] += 1
@@ -1255,19 +1283,19 @@ def main(page: ft.Page):
         page.update()
 
     btn_identifique_origen = ft.ElevatedButton(
-        text="✅ Identifiqué la causa", width=172, height=38,
+        text="✅ Identifiqué la causa", width=162, height=38,
         on_click=registrar_origen_identificado,
         style=ft.ButtonStyle(bgcolor=ft.colors.TEAL_700, color=ft.colors.WHITE, padding=4)
     )
     btn_modifique_habito = ft.ElevatedButton(
-        text="🔄 Modifiqué mi hábito", width=172, height=38,
+        text="🔄 Modifiqué mi hábito", width=162, height=38,
         on_click=registrar_habito_modificado,
         style=ft.ButtonStyle(bgcolor=ft.colors.GREEN_700, color=ft.colors.WHITE, padding=4)
     )
 
     tarjeta_solucion_sintoma = ft.Container(
-        width=395,
-        padding=16,
+        width=365,
+        padding=14,
         border_radius=14,
         bgcolor="#111827",
         border=ft.border.all(1, ft.colors.AMBER_400),
@@ -1276,14 +1304,14 @@ def main(page: ft.Page):
             controls=[
                 titulo_solucion,
                 ft.Divider(height=6),
-                ft.Text("🔍 Origen detectado en tus hábitos:", size=13, weight=ft.FontWeight.BOLD),
+                ft.Text("🔍 Origen detectado en tus hábitos:", size=12, weight=ft.FontWeight.BOLD),
                 texto_causa_sintoma,
-                ft.Text("🥗 Alimentos recomendados:", size=13, weight=ft.FontWeight.BOLD),
+                ft.Text("🥗 Alimentos recomendados:", size=12, weight=ft.FontWeight.BOLD),
                 texto_alimentos_sintoma,
-                ft.Text("✅ Plan de acción inmediato:", size=13, weight=ft.FontWeight.BOLD),
+                ft.Text("✅ Plan de acción inmediato:", size=12, weight=ft.FontWeight.BOLD),
                 texto_acciones_sintoma,
                 ft.Divider(height=8),
-                ft.Text("Evalúa tu regulación frente a este síntoma:", size=12, weight=ft.FontWeight.BOLD),
+                ft.Text("Evalúa tu regulación frente a este síntoma:", size=11, weight=ft.FontWeight.BOLD),
                 ft.Row(controls=[btn_identifique_origen, btn_modifique_habito], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 texto_feedback_accion
             ],
@@ -1292,10 +1320,10 @@ def main(page: ft.Page):
     )
 
     def crear_pastilla_sintoma(clave, etiqueta):
-        txt = ft.Text(etiqueta, size=12, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, no_wrap=True)
+        txt = ft.Text(etiqueta, size=11, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE, no_wrap=True)
         cont = ft.Container(
-            width=125,
-            height=40,
+            width=116,
+            height=38,
             border_radius=10,
             bgcolor="#1E293B",
             alignment=ft.alignment.center,
@@ -1313,7 +1341,7 @@ def main(page: ft.Page):
     fila_botones_sintomas = ft.Row(
         controls=[b["contenedor"] for b in botones_sintomas.values()],
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        width=395
+        width=365
     )
 
     def aplicar_colores_sintomas():
@@ -1364,14 +1392,14 @@ def main(page: ft.Page):
         tarjeta_solucion_sintoma.visible = True
         page.update()
 
-    texto_porcentaje_efectividad = ft.Text("0%", size=22, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400)
-    barra_efectividad = ft.ProgressBar(width=360, value=0.0, color=ft.colors.GREEN_400, bgcolor="#334155", border_radius=8)
-    texto_nivel_efectividad = ft.Text("", size=13, weight=ft.FontWeight.W_500)
-    texto_metricas_efectividad = ft.Text("", size=12, color=ft.colors.GREY_400)
+    texto_porcentaje_efectividad = ft.Text("0%", size=20, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400)
+    barra_efectividad = ft.ProgressBar(width=335, value=0.0, color=ft.colors.GREEN_400, bgcolor="#334155", border_radius=8)
+    texto_nivel_efectividad = ft.Text("", size=12, weight=ft.FontWeight.W_500)
+    texto_metricas_efectividad = ft.Text("", size=11, color=ft.colors.GREY_400)
 
     tarjeta_efectividad = ft.Container(
-        width=395,
-        padding=16,
+        width=365,
+        padding=14,
         border_radius=14,
         bgcolor="#111827",
         border=ft.border.all(1, ft.colors.GREEN_700),
@@ -1379,7 +1407,7 @@ def main(page: ft.Page):
             controls=[
                 ft.Row(
                     controls=[
-                        ft.Text("📈 3. Índice de Regulación Nutricional", size=14, weight=ft.FontWeight.BOLD),
+                        ft.Text("📈 3. Índice de Regulación Nutricional", size=13, weight=ft.FontWeight.BOLD),
                         texto_porcentaje_efectividad
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN
@@ -1438,10 +1466,10 @@ def main(page: ft.Page):
     # =========================================================================
     # SECCIÓN 4: "AJUSTES"
     # =========================================================================
-    subtitulo_config = ft.Text("⚙️ Configuración de NutriXion", size=19, weight=ft.FontWeight.BOLD)
+    subtitulo_config = ft.Text("⚙️ Configuración de NutriXion", size=18, weight=ft.FontWeight.BOLD)
 
-    icono_tema = ft.Icon(ft.icons.DARK_MODE, color=ft.colors.CYAN_300, size=26)
-    texto_modo_actual = ft.Text("Modo Oscuro activado", size=14, weight=ft.FontWeight.W_500)
+    icono_tema = ft.Icon(ft.icons.DARK_MODE, color=ft.colors.CYAN_300, size=24)
+    texto_modo_actual = ft.Text("Modo Oscuro activado", size=13, weight=ft.FontWeight.W_500)
 
     def alternar_tema(es_oscuro: bool):
         estado_app["modo_oscuro"] = es_oscuro
@@ -1499,11 +1527,11 @@ def main(page: ft.Page):
     )
 
     btn_modo_claro = ft.ElevatedButton(
-        text="☀️ Modo Claro", width=170, on_click=lambda e: alternar_tema(False),
+        text="☀️ Modo Claro", width=155, on_click=lambda e: alternar_tema(False),
         style=ft.ButtonStyle(bgcolor=ft.colors.AMBER_700, color=ft.colors.WHITE)
     )
     btn_modo_oscuro = ft.ElevatedButton(
-        text="🌙 Modo Oscuro", width=170, on_click=lambda e: alternar_tema(True),
+        text="🌙 Modo Oscuro", width=155, on_click=lambda e: alternar_tema(True),
         style=ft.ButtonStyle(bgcolor=ft.colors.BLUE_GREY_800, color=ft.colors.WHITE)
     )
 
@@ -1517,14 +1545,14 @@ def main(page: ft.Page):
         page.update()
 
     tarjeta_tema_config = ft.Container(
-        width=395,
-        padding=18,
+        width=365,
+        padding=16,
         border_radius=14,
         bgcolor="#111827",
         border=ft.border.all(1, "#1F2937"),
         content=ft.Column(
             controls=[
-                ft.Text("1. Apariencia de la aplicación", size=15, weight=ft.FontWeight.BOLD),
+                ft.Text("1. Apariencia de la aplicación", size=14, weight=ft.FontWeight.BOLD),
                 ft.Row(
                     controls=[ft.Row(controls=[icono_tema, texto_modo_actual], spacing=10), switch_tema],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN
@@ -1532,10 +1560,10 @@ def main(page: ft.Page):
                 ft.Divider(height=8),
                 ft.Row(controls=[btn_modo_claro, btn_modo_oscuro], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 ft.Divider(height=12),
-                ft.Text("2. Gestión de datos de evaluación", size=15, weight=ft.FontWeight.BOLD),
+                ft.Text("2. Gestión de datos de evaluación", size=14, weight=ft.FontWeight.BOLD),
                 ft.ElevatedButton(
                     text="🗑️ Reiniciar historial y métricas del día",
-                    width=360,
+                    width=335,
                     on_click=reiniciar_estadisticas_completas,
                     style=ft.ButtonStyle(bgcolor=ft.colors.RED_700, color=ft.colors.WHITE)
                 )
