@@ -36,10 +36,10 @@ jobs:
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "platforms;android-35" "build-tools;34.0.0" "build-tools;35.0.0"
 
-      - name: 6. Instalar Flet y preparar compilador
+      - name: 6. Instalar Flet y preparar icono oficial de NutriXion
         run: |
           python -m pip install --upgrade pip
-          pip install flet==0.24.1 pyyaml
+          pip install flet==0.24.1 pyyaml pillow
 
           cat << 'EOF' > /tmp/compilar_ci.py
           import os
@@ -48,6 +48,47 @@ jobs:
           import runpy
           import subprocess
           import yaml
+          from PIL import Image
+
+          # 1. Convertir logo.png en el icono oficial de Android (assets/icon.png)
+          posibles_logos = [
+              "logo.png", "logo.jpg", "logo.jpeg",
+              "logo_nutrixion.png", "logo_nutrixion.jpg",
+              "image_1.png", "watermarked_img_4370711781040816475.jpg"
+          ]
+          ruta_logo_encontrado = None
+          for nombre in posibles_logos:
+              if os.path.exists(nombre):
+                  ruta_logo_encontrado = nombre
+                  break
+
+          os.makedirs("assets", exist_ok=True)
+
+          if ruta_logo_encontrado:
+              print(f"--> Procesando '{ruta_logo_encontrado}' como icono oficial de Android...", flush=True)
+              img = Image.open(ruta_logo_encontrado).convert("RGBA")
+              ancho, alto = img.size
+
+              # Recortamos el cuadrado central para que el escudo circular no se deforme
+              lado = min(ancho, alto)
+              izq = (ancho - lado) // 2
+              arr = (alto - lado) // 2
+              img_cuadrada = img.crop((izq, arr, izq + lado, arr + lado))
+              img_icono = img_cuadrada.resize((1024, 1024), Image.Resampling.LANCZOS)
+
+              # Guardamos en todas las rutas que Flet y Android utilizan
+              for destino in [
+                  "assets/icon.png",
+                  "assets/icon_android.png",
+                  "assets/icon_ios.png",
+                  "assets/splash.png",
+                  "assets/splash_android.png",
+                  "logo.png"
+              ]:
+                  img_icono.save(destino, format="PNG")
+              print("--> Iconos generados correctamente en ./assets/", flush=True)
+          else:
+              print("ADVERTENCIA: No se encontro logo.png en el repositorio.", flush=True)
 
           orig_run = subprocess.run
 
@@ -58,7 +99,15 @@ jobs:
 
               print(f"--> Ajustando compatibilidad Android en: {cwd}", flush=True)
 
-              # 1. Fijar versiones exactas de plugins compatibles con Flutter 3.24.3
+              # Sobrescribir cualquier icono por defecto dentro de la plantilla de Flutter
+              if os.path.exists("assets/icon.png"):
+                  carpeta_imgs = os.path.join(cwd, "images")
+                  if os.path.exists(carpeta_imgs):
+                      for arch in os.listdir(carpeta_imgs):
+                          if arch.endswith(".png"):
+                              shutil.copy2("assets/icon.png", os.path.join(carpeta_imgs, arch))
+
+              # Fijar versiones compatibles de plugins en pubspec.yaml
               try:
                   with open(ruta_pub, "r", encoding="utf-8") as f:
                       data = yaml.safe_load(f)
@@ -74,7 +123,7 @@ jobs:
               except Exception as e:
                   print(f"Aviso en pubspec.yaml: {e}", flush=True)
 
-              # 2. Configurar compileSdk = 35 y targetSdk = 34 sin errores de sintaxis
+              # Configurar compileSdk = 35 y targetSdk = 34
               ruta_app_gradle = os.path.join(cwd, "android", "app", "build.gradle")
               if os.path.exists(ruta_app_gradle):
                   lineas = []
@@ -90,7 +139,7 @@ jobs:
                   with open(ruta_app_gradle, "w", encoding="utf-8") as f:
                       f.writelines(lineas)
 
-              # 3. Fijar librerias AndroidX compatibles con AGP de Flet 0.24.1
+              # Fijar librerias AndroidX compatibles
               ruta_root_gradle = os.path.join(cwd, "android", "build.gradle")
               if os.path.exists(ruta_root_gradle):
                   with open(ruta_root_gradle, "r", encoding="utf-8") as f:
