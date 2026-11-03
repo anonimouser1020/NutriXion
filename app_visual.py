@@ -1056,7 +1056,7 @@ def main(page: ft.Page):
         page.update()
 
     def mostrar_imagen_en_visor(ruta):
-        """Carga la imagen en base64 para que se visualice sin fallos tanto en Android como en PC."""
+        """Carga la imagen en base64 para que se visualice tanto en Android como en PC."""
         try:
             with open(ruta, "rb") as f:
                 visor_imagen.src_base64 = base64.b64encode(f.read()).decode("utf-8")
@@ -1118,7 +1118,7 @@ def main(page: ft.Page):
         boton_camara.icon = ft.icons.CAMERA_ALT
         boton_camara.style = ft.ButtonStyle(bgcolor=ft.colors.TEAL_700, color=ft.colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
 
-def transmitir_video():
+    def transmitir_video():
         if cv2 is None:
             return
 
@@ -1152,10 +1152,7 @@ def transmitir_video():
             time.sleep(0.03)
 
     def accion_camara(e):
-        # En Android dispara directamente la cámara nativa del teléfono
         if cv2 is None:
-            texto_estado_foto.value = "📸 Abriendo cámara..."
-            page.update()
             selector_camara_movil.pick_files(
                 dialog_title="Tomar foto",
                 file_type=ft.FilePickerFileType.VIDEO,
@@ -1181,7 +1178,17 @@ def transmitir_video():
             page.update()
             if ruta_captura:
                 threading.Thread(target=analizar_foto_local, args=(ruta_captura,), daemon=True).start()
-                
+
+    boton_camara = ft.ElevatedButton(
+        text="Cámara", icon=ft.icons.CAMERA_ALT, on_click=accion_camara,
+        width=176, height=44, style=ft.ButtonStyle(bgcolor=ft.colors.TEAL_700, color=ft.colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
+    )
+    boton_galeria = ft.ElevatedButton(
+        text="Galería", icon=ft.icons.PHOTO_LIBRARY, on_click=abrir_galeria,
+        width=176, height=44, style=ft.ButtonStyle(bgcolor=ft.colors.INDIGO_600, color=ft.colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
+    )
+    fila_botones_imagen = ft.Row(controls=[boton_camara, boton_galeria], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, width=365)
+
     def clic_boton_manual(e):
         if input_comida.value.strip():
             comida_escrita = input_comida.value.strip()

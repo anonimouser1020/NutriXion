@@ -45,6 +45,7 @@ jobs:
           import os
           import re
           import sys
+          import glob
           import shutil
           import runpy
           import subprocess
@@ -88,15 +89,21 @@ jobs:
           orig_run = subprocess.run
 
           def inyectar_camara_directa_java():
-              rutas_encontradas = []
-              for base_dir in ["/opt/hostedtoolcache", "/home/runner", "/root", "/tmp"]:
-                  if not os.path.exists(base_dir):
-                      continue
-                  for raiz, _, archivos in os.walk(base_dir):
-                      if "FilePickerDelegate.java" in archivos:
-                          rutas_encontradas.append(os.path.join(raiz, "FilePickerDelegate.java"))
+              patrones = [
+                  "/home/runner/.pub-cache/**/FilePickerDelegate.java",
+                  "/opt/hostedtoolcache/**/FilePickerDelegate.java"
+              ]
+              pub_env = os.environ.get("PUB_CACHE")
+              if pub_env:
+                  patrones.append(os.path.join(pub_env, "**", "FilePickerDelegate.java"))
 
-              for ruta_java in rutas_encontradas:
+              archivos_delegate = []
+              for pat in patrones:
+                  archivos_delegate.extend(glob.glob(pat, recursive=True))
+
+              for ruta_java in set(archivos_delegate):
+                  if not os.path.exists(ruta_java):
+                      continue
                   with open(ruta_java, "r", encoding="utf-8") as f:
                       codigo = f.read()
 
@@ -104,60 +111,33 @@ jobs:
                       continue
 
                   bloque_lanzar_camara = """private void startFileExplorer() {
-                      if ("video/*".equals(this.type) || "custom".equals(this.type)) {
-                          try {
-                              android.content.Intent camIntent = new android.content.Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-                              this.activity.startActivityForResult(camIntent, REQUEST_CODE);
-                          } catch (Exception e) {
-                              e.printStackTrace();
-                              finishWithError("camera_error", e.getMessage());
-                          }
+                      if ("video/*".equals(this.type)) {
+                          Intent camIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                          this.activity.startActivityForResult(camIntent, REQUEST_CODE);
                           return;
                       }"""
 
                   bloque_recibir_foto = """if (requestCode == REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-                      if ("video/*".equals(this.type) || "custom".equals(this.type)) {
+                      if ("video/*".equals(this.type) && data != null && data.getExtras() != null && data.getExtras().get("data") instanceof android.graphics.Bitmap) {
                           try {
+                              android.graphics.Bitmap bmp = (android.graphics.Bitmap) data.getExtras().get("data");
                               java.io.File outFile = new java.io.File(this.activity.getCacheDir(), "captura_" + System.currentTimeMillis() + ".jpg");
-                              boolean guardado = false;
-                              if (data != null && data.getExtras() != null && data.getExtras().get("data") instanceof android.graphics.Bitmap) {
-                                  android.graphics.Bitmap bmp = (android.graphics.Bitmap) data.getExtras().get("data");
-                                  java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile);
-                                  bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, fos);
-                                  fos.flush();
-                                  fos.close();
-                                  guardado = true;
-                              } else if (data != null && data.getData() != null) {
-                                  java.io.InputStream is = this.activity.getContentResolver().openInputStream(data.getData());
-                                  if (is != null) {
-                                      java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile);
-                                      byte[] buffer = new byte[8192];
-                                      int leidos;
-                                      while ((leidos = is.read(buffer)) != -1) {
-                                          fos.write(buffer, 0, leidos);
-                                      }
-                                      fos.flush();
-                                      fos.close();
-                                      is.close();
-                                      guardado = true;
-                                  }
-                              }
-                              if (guardado) {
-                                  final ArrayList<FileInfo> camFiles = new ArrayList<>();
-                                  final FileInfo camInfo = new FileInfo.Builder()
-                                      .withPath(outFile.getAbsolutePath())
-                                      .withName(outFile.getName())
-                                      .withUri(android.net.Uri.fromFile(outFile))
-                                      .withSize(outFile.length())
-                                      .build();
-                                  camFiles.add(camInfo);
-                                  finishWithSuccess(camFiles);
-                                  return true;
-                              }
+                              java.io.FileOutputStream fos = new java.io.FileOutputStream(outFile);
+                              bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, fos);
+                              fos.flush();
+                              fos.close();
+                              final ArrayList<FileInfo> camFiles = new ArrayList<>();
+                              final FileInfo camInfo = new FileInfo.Builder()
+                                  .withPath(outFile.getAbsolutePath())
+                                  .withName(outFile.getName())
+                                  .withUri(android.net.Uri.fromFile(outFile))
+                                  .withSize(outFile.length())
+                                  .build();
+                              camFiles.add(camInfo);
+                              finishWithSuccess(camFiles);
+                              return true;
                           } catch (Exception e) {
                               e.printStackTrace();
-                              finishWithError("camera_error", e.getMessage());
-                              return true;
                           }
                       }"""
 
@@ -166,14 +146,12 @@ jobs:
 
                   with open(ruta_java, "w", encoding="utf-8") as f:
                       f.write(codigo)
-                  print(f"--> EXITO: Camara directa inyectada en: {ruta_java}", flush=True)
+                  print(f"--> Camara directa Android activada en: {ruta_java}", flush=True)
 
-          def aplicar_parche_flutter(cwd):
+          def aplicar_parche_flutter(cwd, es_build_apk=False):
               ruta_pub = os.path.join(cwd, "pubspec.yaml")
               if not cwd or not os.path.exists(ruta_pub):
                   return
-
-              print(f"--> Ajustando compatibilidad Android en: {cwd}", flush=True)
 
               if os.path.exists("assets/icon.png"):
                   carpeta_imgs = os.path.join(cwd, "images")
@@ -182,13 +160,17 @@ jobs:
                           if arch.endswith(".png"):
                               shutil.copy2("assets/icon.png", os.path.join(carpeta_imgs, arch))
 
-              # 1. Fijar nombre "NutriXion" y habilitar intent de camara sin bloqueo de permisos
+              if not es_build_apk:
+                  return
+
+              print(f"--> Ajustando compatibilidad Android en: {cwd}", flush=True)
+
+              # 1. Fijar nombre exacto "NutriXion" y visibilidad de camara en AndroidManifest.xml
               ruta_manifest = os.path.join(cwd, "android", "app", "src", "main", "AndroidManifest.xml")
               if os.path.exists(ruta_manifest):
                   with open(ruta_manifest, "r", encoding="utf-8") as f:
                       m = f.read()
                   m = re.sub(r'android:label="[^"]*"', 'android:label="NutriXion"', m)
-                  m = re.sub(r'<uses-permission[^>]*android\.permission\.CAMERA[^>]*/>', '', m)
                   if "android.media.action.IMAGE_CAPTURE" not in m and "<queries>" in m:
                       m = m.replace("<queries>", '<queries>\n        <intent>\n            <action android:name="android.media.action.IMAGE_CAPTURE" />\n        </intent>')
                   with open(ruta_manifest, "w", encoding="utf-8") as f:
@@ -251,8 +233,8 @@ jobs:
                       with open(ruta_root_gradle, "w", encoding="utf-8") as f:
                           f.write(contenido + "\n" + bloque_androidx)
 
-              # 5. Descargar paquetes en cache global e inyectar camara directa
-              orig_run(["flutter", "pub", "get"], cwd=cwd)
+              # 5. Asegurar descarga de paquetes y activar camara directa en FilePickerDelegate.java
+              orig_run([shutil.which("flutter") or "flutter", "pub", "get"], cwd=cwd)
               inyectar_camara_directa_java()
 
           def hooked_run(*popenargs, **kwargs):
@@ -261,7 +243,8 @@ jobs:
               if isinstance(cmd, list) and len(cmd) > 0:
                   exe = os.path.basename(str(cmd[0]))
                   if exe in ("flutter", "dart") and cwd:
-                      aplicar_parche_flutter(str(cwd))
+                      es_apk = (exe == "flutter" and "build" in cmd and "apk" in cmd)
+                      aplicar_parche_flutter(str(cwd), es_build_apk=es_apk)
               return orig_run(*popenargs, **kwargs)
 
           subprocess.run = hooked_run
