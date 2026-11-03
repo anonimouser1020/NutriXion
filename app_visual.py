@@ -1118,7 +1118,7 @@ def main(page: ft.Page):
         boton_camara.icon = ft.icons.CAMERA_ALT
         boton_camara.style = ft.ButtonStyle(bgcolor=ft.colors.TEAL_700, color=ft.colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
 
-    def transmitir_video():
+def transmitir_video():
         if cv2 is None:
             return
 
@@ -1131,8 +1131,7 @@ def main(page: ft.Page):
             detener_camara()
             selector_camara_movil.pick_files(
                 dialog_title="Tomar foto",
-                file_type=ft.FilePickerFileType.CUSTOM,
-                allowed_extensions=["camara"],
+                file_type=ft.FilePickerFileType.VIDEO,
                 allow_multiple=False
             )
             return
@@ -1153,12 +1152,13 @@ def main(page: ft.Page):
             time.sleep(0.03)
 
     def accion_camara(e):
-        # En Android abre directamente la cámara del teléfono (tomar foto -> tocar Listo/✔️)
+        # En Android dispara directamente la cámara nativa del teléfono
         if cv2 is None:
+            texto_estado_foto.value = "📸 Abriendo cámara..."
+            page.update()
             selector_camara_movil.pick_files(
                 dialog_title="Tomar foto",
-                file_type=ft.FilePickerFileType.CUSTOM,
-                allowed_extensions=["camara"],
+                file_type=ft.FilePickerFileType.VIDEO,
                 allow_multiple=False
             )
             return
@@ -1181,17 +1181,7 @@ def main(page: ft.Page):
             page.update()
             if ruta_captura:
                 threading.Thread(target=analizar_foto_local, args=(ruta_captura,), daemon=True).start()
-
-    boton_camara = ft.ElevatedButton(
-        text="Cámara", icon=ft.icons.CAMERA_ALT, on_click=accion_camara,
-        width=176, height=44, style=ft.ButtonStyle(bgcolor=ft.colors.TEAL_700, color=ft.colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
-    )
-    boton_galeria = ft.ElevatedButton(
-        text="Galería", icon=ft.icons.PHOTO_LIBRARY, on_click=abrir_galeria,
-        width=176, height=44, style=ft.ButtonStyle(bgcolor=ft.colors.INDIGO_600, color=ft.colors.WHITE, shape=ft.RoundedRectangleBorder(radius=10))
-    )
-    fila_botones_imagen = ft.Row(controls=[boton_camara, boton_galeria], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, width=365)
-
+                
     def clic_boton_manual(e):
         if input_comida.value.strip():
             comida_escrita = input_comida.value.strip()
